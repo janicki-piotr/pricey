@@ -1,3 +1,11 @@
+group = "pl.redny"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 plugins {
     kotlin("jvm") version "1.6.10"
     kotlin("plugin.allopen") version "1.6.10"
@@ -5,6 +13,7 @@ plugins {
     id("io.quarkus")
     id("org.sonarqube") version "3.3"
     id("maven-publish")
+    id("io.gitlab.arturbosch.detekt").version("1.19.0")
 }
 
 repositories {
@@ -47,14 +56,6 @@ dependencies {
     testImplementation("io.rest-assured:rest-assured")
 }
 
-group = "pl.redny"
-version = "1.0.0"
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
 allOpen {
     annotation("javax.ws.rs.Path")
     annotation("javax.enterprise.context.ApplicationScoped")
@@ -78,6 +79,7 @@ tasks.jacocoTestReport {
 }
 
 tasks.sonarqube {
+    dependsOn(tasks.named("detekt"))
     dependsOn(tasks.named("jacocoTestReport"))
 }
 
@@ -88,7 +90,24 @@ sonarqube {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.core.codeCoveragePlugin", "jacoco")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.kotlin.detekt.reportPaths", "build/reports/detekt/detekt.xml")
     }
+}
+
+detekt {
+    config = files("$projectDir/src/main/resources/detekt-config.yml")
+    buildUponDefaultConfig = true
+    allRules = false
+}
+
+tasks.detekt {
+    reports {
+        html.required.set(true) // observe findings in your browser with structure and code snippets
+        xml.required.set(true) // checkstyle like format mainly for integrations like Jenkins
+        txt.required.set(true) // similar to the console output, contains issue signature to manually edit baseline files
+        sarif.required.set(true) // standardized SARIF format (https://sarifweb.azurewebsites.net/) to support integrations with Github Code Scanning
+    }
+    jvmTarget = "11"
 }
 
 publishing {
@@ -108,3 +127,4 @@ publishing {
         }
     }
 }
+
