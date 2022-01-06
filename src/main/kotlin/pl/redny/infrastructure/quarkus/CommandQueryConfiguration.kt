@@ -27,6 +27,4 @@ class CommandQueryConfiguration {
             queryHandlers.toList() as List<QueryHandler<Query, *>>
         )
     }
-
-
 }

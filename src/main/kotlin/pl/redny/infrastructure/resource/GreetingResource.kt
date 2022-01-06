@@ -9,6 +9,7 @@ import javax.ws.rs.core.MediaType
 
 @Path("/hello")
 class GreetingResource(var queryDispatcher : QueryDispatcher) {
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     fun hello() = queryDispatcher.dispatchQuery(GreetingQuery())

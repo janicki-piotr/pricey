@@ -11,7 +11,9 @@ class GreetingQueryHandler(private val greetingsConfig: GreetingConfig, private 
     QueryHandler<GreetingQuery, String> {
 
     override fun execute(query: GreetingQuery): Result<String> {
-        return Result.success(greetingsConfig.message().orEmpty() + dateTime.now(DateTime.FORMATTER_DD_MM_YYYY_HH_MM_SS))
+        return Result.success(
+            greetingsConfig.message().orEmpty() + dateTime.now(DateTime.FORMATTER_DD_MM_YYYY_HH_MM_SS)
+        )
     }
 
     override fun canHandle(query: Query): Boolean = query is GreetingQuery
