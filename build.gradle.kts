@@ -1,12 +1,22 @@
 plugins {
     kotlin("jvm") version "1.6.10"
     kotlin("plugin.allopen") version "1.6.10"
+    jacoco
     id("io.quarkus")
+    id("org.sonarqube") version "3.3"
+    id("maven-publish")
 }
 
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        url = uri("https://maven.pkg.github.com/janicki-piotr/cqrs-kt")
+        credentials {
+            username = System.getenv("PUBLISH_USERNAME")
+            password = System.getenv("PUBLISH_PASSWORD")
+        }
+    }
 }
 
 val quarkusPlatformGroupId: String by project
@@ -30,6 +40,9 @@ dependencies {
     implementation(platform("io.arrow-kt:arrow-stack:1.0.1"))
     implementation("io.arrow-kt:arrow-core")
 
+    // cqrs-kt
+    implementation("pl.redny:cqrs-kt:1.0.0")
+
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
@@ -51,4 +64,47 @@ allOpen {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     kotlinOptions.javaParameters = true
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test) // tests are required to run before generating the report
+    reports {
+        xml.required.set(true)
+    }
+}
+
+tasks.sonarqube {
+    dependsOn(tasks.named("jacocoTestReport"))
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "janicki-piotr_pricey")
+        property("sonar.organization", "pcpiotr-github")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.core.codeCoveragePlugin", "jacoco")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/janicki-piotr/pricey")
+            credentials {
+                username = System.getenv("PUBLISH_USERNAME")
+                password = System.getenv("PUBLISH_PASSWORD")
+            }
+        }
+    }
+    publications {
+        register<MavenPublication>("gpr") {
+            from(components["java"])
+        }
+    }
 }
